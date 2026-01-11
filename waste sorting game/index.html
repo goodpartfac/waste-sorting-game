@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>เกมแยกขยะ - โรงเรียนบ้านใหม่วัฒนา</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&family=Kanit:wght@400;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --bg-color: #f0f8ff;
+            --header-height: auto; 
+        }
+        
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            height: 100vh; height: 100dvh;
+            width: 100vw;
+            overflow: hidden; 
+            user-select: none; -webkit-user-select: none;
+        }
+
+        /* --- Header --- */
+        header {
+            background: linear-gradient(135deg, #ffffff 0%, #e3f2fd 100%);
+            padding: 10px 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 1000; min-height: 85px;
+        }
+        .logo { height: 60px; width: auto; }
+        .school-info { text-align: left; display: flex; flex-direction: column; justify-content: center; }
+        .school-name {
+            font-family: 'Kanit', sans-serif; font-size: 1rem;
+            font-weight: 800; color: #1a237e; margin: 0; line-height: 1.2;
+        }
+        .teacher-name { font-size: 0.85rem; margin: 3px 0 0 0; color: #333; font-weight: bold; }
+        .subject-name { font-size: 0.8rem; margin: 2px 0 0 0; color: #555; font-style: italic; display: block; }
+
+        /* --- Screens --- */
+        .screen {
+            display: none; position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            padding-top: 100px; 
+            flex-direction: column; align-items: center;
+            background: var(--bg-color);
+        }
+        .screen.active { display: flex; }
+
+        /* --- Login --- */
+        #login-screen { z-index: 500; overflow-y: auto; justify-content: flex-start; }
+        .login-box {
+            background: white; padding: 25px; border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            width: 90%; max-width: 400px; text-align: center;
+            margin-top: 10px; margin-bottom: 50px; border: 1px solid #e0e0e0;
+        }
+        .login-box h2 { 
+            color: #2E7D32; font-family: 'Kanit'; margin-top: 0; 
+            font-size: 1.5rem; line-height: 1.4; 
+        }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 1rem; }
+        .input-group input, .input-group select {
+            width: 100%; padding: 10px; border: 2px solid #ccc; 
+            border-radius: 10px; font-size: 1rem; background: #f9f9f9;
+        }
+        .btn-start {
+            background: #ff9800; color: white; border: none;
+            padding: 12px; width: 100%; font-size: 1.2rem; font-weight: 800;
+            border-radius: 50px; cursor: pointer; font-family: 'Kanit';
+            margin-top: 10px; box-shadow: 0 4px 0 #e65100; transition: transform 0.1s;
+        }
+        .btn-start:active { transform: translateY(4px); box-shadow: none; }
+
+        /* --- Game --- */
+        #game-screen { overflow: hidden; touch-action: none; justify-content: space-between; padding-bottom: 5px; }
+        .game-status-bar {
+            width: 95%; max-width: 500px; display: flex; justify-content: space-between;
+            background: white; padding: 8px 20px; border-radius: 50px;
+            font-family: 'Kanit'; font-size: 1.2rem; font-weight: 800;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin: 5px auto;
+            border: 2px solid #eee; flex-shrink: 0; position: relative; z-index: 50;
+        }
+        .timer { color: #d32f2f; }
+        .score { color: #388E3C; }
+
+        #trash-container {
+            flex: 1; width: 100%; position: relative;
+            overflow: visible; z-index: 100;
+        }
+        .trash-item {
+            width: 110px; height: 110px; background: white; 
+            border: 4px solid #333; border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25); position: absolute;
+            transform: translate(-50%, -50%); 
+            z-index: 500; cursor: grab;
+        }
+        .trash-item:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.1); }
+        .trash-item div { font-size: 3.5rem; line-height: 1; margin-bottom: 5px; pointer-events: none;}
+        .trash-item span { font-family: 'Kanit'; font-weight: bold; font-size: 0.9rem; color: #333; pointer-events: none;}
+
+        .bins-container {
+            display: flex; justify-content: space-around; align-items: flex-end;
+            width: 100%; padding: 5px; height: 160px; flex-shrink: 0;
+            z-index: 40; background: rgba(255,255,255,0.4); border-radius: 20px 20px 0 0;
+        }
+        .bin {
+            width: 23%; height: 100%; position: relative;
+            display: flex; justify-content: center; align-items: flex-end;
+            transition: transform 0.1s;
+        }
+        .bin img {
+            width: 100%; height: 100%; object-fit: contain;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); pointer-events: none;
+        }
+        .bin.hovered { transform: scale(1.15); filter: brightness(1.1); }
+
+        /* --- Result (ปรับปรุงใหม่) --- */
+        #result-screen { z-index: 2000; background: rgba(0,0,0,0.9); padding-top: 20px; justify-content: flex-start; overflow-y: auto; }
+        .result-content {
+            background: white; width: 95%; max-width: 500px;
+            padding: 30px; border-radius: 25px; text-align: center;
+            box-shadow: 0 0 40px rgba(255,255,255,0.2);
+            margin-bottom: 50px;
+        }
+
+        /* สถานะ ผ่าน/ไม่ผ่าน */
+        .status-badge {
+            display: inline-block; padding: 10px 30px; border-radius: 50px;
+            font-family: 'Kanit'; font-size: 1.8rem; font-weight: 800;
+            margin: 10px 0; border: 4px solid;
+        }
+        .status-pass { color: #2E7D32; border-color: #2E7D32; background: #E8F5E9; }
+        .status-fail { color: #C62828; border-color: #C62828; background: #FFEBEE; }
+
+        /* กล่องความรู้ */
+        .knowledge-box {
+            background: #F1F8E9; border-radius: 15px; padding: 15px;
+            margin-top: 20px; text-align: left; border: 2px solid #C5E1A5;
+        }
+        .knowledge-box h3 { margin: 0 0 10px 0; font-family: 'Kanit'; color: #33691E; display: flex; align-items: center; gap: 5px;}
+        .knowledge-list { list-style: none; padding: 0; margin: 0; font-size: 0.95rem; }
+        .knowledge-list li { margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px; }
+        .color-dot { width: 15px; height: 15px; border-radius: 50%; display: inline-block; margin-top: 4px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.2);}
+
+        /* Overlay */
+        #feedback-overlay {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 2.5rem; font-weight: 800; font-family: 'Kanit';
+            pointer-events: none; opacity: 0; transition: opacity 0.2s;
+            z-index: 3000; padding: 20px 40px; border-radius: 50px;
+            background: white; white-space: nowrap; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 5px solid;
+        }
+        .feedback-correct { color: #2E7D32; border-color: #2E7D32 !important; }
+        .feedback-wrong { color: #c62828; border-color: #c62828 !important; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <img src="logo.png" alt="Logo" class="logo" onerror="this.style.display='none'"> 
+        <div class="school-info">
+            <h1 class="school-name">โรงเรียนบ้านใหม่วัฒนา</h1>
+            <p class="teacher-name">ครูผู้สอน: ครูขันทอง โพธิ์เตี้ย</p>
+            <p class="subject-name">วิชาคอมพิวเตอร์ วิทยาการคำนวณ</p>
+        </div>
+    </header>
+
+    <div id="login-screen" class="screen active">
+        <div class="login-box">
+            <h2>เกมแยกขยะหรรษา</h2>
+            <div class="input-group">
+                <label>ชื่อ-นามสกุล:</label>
+                <input type="text" id="player-name" placeholder="ชื่อเล่น หรือ ชื่อจริง">
+            </div>
+            <div class="input-group">
+                <label>ระดับชั้น:</label>
+                <select id="player-class">
+                    <option value="ป.1">ประถมศึกษาปีที่ 1</option>
+                    <option value="ป.2">ประถมศึกษาปีที่ 2</option>
+                    <option value="ป.3">ประถมศึกษาปีที่ 3</option>
+                    <option value="ป.4">ประถมศึกษาปีที่ 4</option>
+                    <option value="ป.5">ประถมศึกษาปีที่ 5</option>
+                    <option value="ป.6">ประถมศึกษาปีที่ 6</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>เลขที่:</label>
+                <input type="number" id="player-number" placeholder="เลขที่">
+            </div>
+            <button class="btn-start" onclick="startGame()">▶ เริ่มเล่นเกม</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="game-status-bar">
+            <div class="timer">⏰ <span id="time-display">60</span></div>
+            <div class="score">⭐ <span id="score-display">0</span></div>
+        </div>
+
+        <div id="trash-container"></div>
+
+        <div class="bins-container">
+            <div class="bin" id="bin-green" data-type="green">
+                <img src="bin_green.png" alt="ถังเขียว">
+            </div>
+            <div class="bin" id="bin-blue" data-type="blue">
+                <img src="bin_blue.png" alt="ถังฟ้า">
+            </div>
+            <div class="bin" id="bin-yellow" data-type="yellow">
+                <img src="bin_yellow.png" alt="ถังเหลือง">
+            </div>
+            <div class="bin" id="bin-red" data-type="red">
+                <img src="bin_red.png" alt="ถังแดง">
+            </div>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <div class="result-content">
+            <h2 style="color:#1976D2; margin-top:0; font-family:'Kanit';">จบเกมแล้ว!</h2>
+            <p style="font-size:1.1rem;">ผู้เล่น: <span id="result-player" style="font-weight:bold; color:#333;"></span></p>
+            
+            <div id="status-badge" class="status-badge"></div>
+            
+            <div style="font-size: 1.5rem; font-weight:800; font-family:'Kanit'; color:#555; margin-top:10px;">
+                คะแนนของคุณ: <span id="result-score" style="font-size: 2.5rem; color:#333;">0</span>
+            </div>
+            <p id="result-msg" style="color:#666; font-weight:bold; margin: 10px 0;"></p>
+
+            <div class="knowledge-box">
+                <h3>💡 จำง่ายๆ แยกถูกวิธี</h3>
+                <ul class="knowledge-list">
+                    <li>
+                        <span class="color-dot" style="background:#4CAF50;"></span>
+                        <span><b>ถังเขียว (อินทรีย์):</b> ขยะเน่าเสียได้ ย่อยสลายได้ เช่น เศษอาหาร ใบไม้ เปลือกผลไม้</span>
+                    </li>
+                    <li>
+                        <span class="color-dot" style="background:#2196F3;"></span>
+                        <span><b>ถังฟ้า (รีไซเคิล):</b> ขยะขายได้ นำกลับมาใช้ใหม่ เช่น ขวดน้ำ แก้ว กระดาษ กระป๋อง</span>
+                    </li>
+                    <li>
+                        <span class="color-dot" style="background:#FFEB3B;"></span>
+                        <span><b>ถังเหลือง (ทั่วไป):</b> ขยะย่อยสลายยาก ไม่คุ้มรีไซเคิล เช่น ถุงขนม โฟม ถุงพลาสติกเปื้อน</span>
+                    </li>
+                    <li>
+                        <span class="color-dot" style="background:#F44336;"></span>
+                        <span><b>ถังแดง (อันตราย):</b> ขยะมีพิษ อันตรายมาก เช่น ถ่านไฟฉาย หลอดไฟ กระป๋องสเปรย์ ยาฆ่าแมลง</span>
+                    </li>
+                </ul>
+            </div>
+
+            <button class="btn-start" onclick="location.reload()" style="margin-top:20px;">🔄 เล่นใหม่อีกครั้ง</button>
+        </div>
+    </div>
+
+    <div id="feedback-overlay"></div>
+
+    <audio id="bgm" loop preload="auto"><source src="bgm.mp3" type="audio/mpeg"></audio>
+    <audio id="sfx-correct" preload="auto"><source src="correct.mp3" type="audio/mpeg"></audio>
+    <audio id="sfx-wrong" preload="auto"><source src="wrong.mp3" type="audio/mpeg"></audio>
+
+    <script>
+        const gameDuration = 60; 
+        let timer;
+        let timeLeft = gameDuration;
+        let score = 0;
+        let currentDragItem = null;
+
+        const trashData = [
+            { name: "เศษผัก", type: "green", icon: "🥬" },
+            { name: "กางปลา", type: "green", icon: "🐟" },
+            { name: "เปลือกกล้วย", type: "green", icon: "🍌" },
+            { name: "เศษข้าว", type: "green", icon: "🍚" },
+            { name: "ขวดน้ำ", type: "blue", icon: "🧴" },
+            { name: "กระดาษ", type: "blue", icon: "📄" },
+            { name: "กระป๋อง", type: "blue", icon: "🥫" },
+            { name: "ขวดแก้ว", type: "blue", icon: "🍾" },
+            { name: "ถุงขนม", type: "yellow", icon: "🍟" },
+            { name: "กล่องโฟม", type: "yellow", icon: "🥡" },
+            { name: "เศษผ้า", type: "yellow", icon: "👕" },
+            { name: "หลอด", type: "yellow", icon: "🥤" },
+            { name: "ถ่านไฟฉาย", type: "red", icon: "🔋" },
+            { name: "หลอดไฟ", type: "red", icon: "💡" },
+            { name: "กระป๋องสี", type: "red", icon: "🎨" },
+            { name: "ยาฆ่าแมลง", type: "red", icon: "☠️" }
+        ];
+
+        function initDragSystem() {
+            const container = document.getElementById('trash-container');
+            container.addEventListener('mousedown', handleDragStart);
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('mouseup', handleDragEnd);
+            container.addEventListener('touchstart', handleDragStart, {passive: false});
+            document.addEventListener('touchmove', handleDragMove, {passive: false});
+            document.addEventListener('touchend', handleDragEnd);
+            document.addEventListener('touchcancel', handleDragEnd);
+        }
+
+        initDragSystem();
+
+        function handleDragStart(e) {
+            const target = e.target.closest('.trash-item');
+            if (!target) return;
+            e.preventDefault();
+            currentDragItem = target;
+            currentDragItem.style.transition = 'none';
+            currentDragItem.style.zIndex = 1000;
+            moveItem(e);
+        }
+
+        function handleDragMove(e) {
+            if (!currentDragItem) return;
+            e.preventDefault();
+            moveItem(e);
+            checkHover(currentDragItem);
+        }
+
+        function handleDragEnd(e) {
+            if (!currentDragItem) return;
+            const item = currentDragItem;
+            currentDragItem = null;
+            item.style.transition = 'all 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+            item.style.zIndex = 500;
+            checkDrop(item);
+        }
+
+        function moveItem(e) {
+            const evt = e.touches ? e.touches[0] : e;
+            const container = document.getElementById('trash-container');
+            const containerRect = container.getBoundingClientRect();
+            const x = evt.clientX - containerRect.left;
+            const y = evt.clientY - containerRect.top;
+            currentDragItem.style.left = x + 'px';
+            currentDragItem.style.top = y + 'px';
+        }
+
+        function startGame() {
+            const name = document.getElementById('player-name').value.trim();
+            const number = document.getElementById('player-number').value.trim();
+            if(!name || !number) { alert("น้องๆ อย่าลืมกรอกชื่อและเลขที่ก่อนนะครับ!"); return; }
+
+            document.getElementById('login-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+
+            const bgm = document.getElementById('bgm');
+            const sfxC = document.getElementById('sfx-correct');
+            const sfxW = document.getElementById('sfx-wrong');
+            bgm.volume = 0.3;
+            [bgm, sfxC, sfxW].forEach(audio => {
+                audio.muted = true; 
+                audio.play().then(() => {
+                    audio.pause(); audio.currentTime = 0; audio.muted = false;
+                    if(audio === bgm) bgm.play();
+                }).catch(e => {});
+            });
+
+            spawnItem();
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('time-display').innerText = timeLeft;
+                if(timeLeft <= 0) endGame();
+            }, 1000);
+        }
+
+        function spawnItem() {
+            const container = document.getElementById('trash-container');
+            container.innerHTML = ''; 
+            const data = trashData[Math.floor(Math.random() * trashData.length)];
+            const item = document.createElement('div');
+            item.className = 'trash-item';
+            item.dataset.type = data.type;
+            item.innerHTML = `<div>${data.icon}</div><span>${data.name}</span>`;
+            item.style.left = '50%'; item.style.top = '50%';
+            container.appendChild(item);
+        }
+
+        function checkHover(item) {
+            const itemRect = item.getBoundingClientRect();
+            const centerX = itemRect.left + (itemRect.width / 2);
+
+            document.querySelectorAll('.bin').forEach(bin => {
+                const binRect = bin.getBoundingClientRect();
+                if (centerX > binRect.left && centerX < binRect.right) {
+                    bin.classList.add('hovered');
+                } else {
+                    bin.classList.remove('hovered');
+                }
+            });
+        }
+
+        function checkDrop(item) {
+            const itemRect = item.getBoundingClientRect();
+            const centerX = itemRect.left + (itemRect.width / 2);
+            const centerY = itemRect.top + (itemRect.height / 2);
+            let dropped = false;
+            
+            document.querySelectorAll('.bin').forEach(bin => {
+                bin.classList.remove('hovered');
+                const binRect = bin.getBoundingClientRect();
+                const isInZone = 
+                    centerX > binRect.left && 
+                    centerX < binRect.right && 
+                    centerY > (binRect.top - 100); 
+
+                if (isInZone) {
+                    dropped = true;
+                    if (item.dataset.type === bin.dataset.type) handleResult(true);
+                    else handleResult(false);
+                }
+            });
+            
+            if (!dropped) {
+                setTimeout(() => {
+                    item.style.left = '50%'; item.style.top = '50%';
+                }, 50);
+            }
+        }
+
+        function handleResult(isCorrect) {
+            const text = isCorrect ? "ถูกต้องครับ! ✅" : "ผิดถังนะ ❌";
+            const cls = isCorrect ? "feedback-correct" : "feedback-wrong";
+            const sfx = document.getElementById(isCorrect ? 'sfx-correct' : 'sfx-wrong');
+            try { sfx.currentTime = 0; sfx.play(); } catch(e) {}
+
+            const fb = document.getElementById('feedback-overlay');
+            fb.innerText = text; fb.className = cls; fb.style.opacity = 1;
+            setTimeout(() => fb.style.opacity = 0, 800);
+
+            if(isCorrect) {
+                score += 10;
+                document.getElementById('score-display').innerText = score;
+                document.getElementById('trash-container').innerHTML = ''; 
+                setTimeout(spawnItem, 600);
+            } else {
+                const item = document.querySelector('.trash-item');
+                setTimeout(() => {
+                    item.style.left = '50%'; item.style.top = '50%';
+                }, 50);
+            }
+        }
+
+        function endGame() {
+            clearInterval(timer);
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('result-screen').classList.add('active');
+            
+            const name = document.getElementById('player-name').value;
+            const cls = document.getElementById('player-class').value;
+            const num = document.getElementById('player-number').value;
+            document.getElementById('result-player').innerText = `${name} (${cls} เลขที่ ${num})`;
+            document.getElementById('result-score').innerText = score;
+
+            // --- ตัดเกรด (Pass/Fail Logic) ---
+            const badge = document.getElementById('status-badge');
+            const msg = document.getElementById('result-msg');
+
+            if (score >= 80) {
+                badge.innerHTML = "ผ่านเกณฑ์ ✅";
+                badge.className = "status-badge status-pass";
+                msg.innerText = "ยอดเยี่ยมมาก! คุณคือผู้เชี่ยวชาญด้านการแยกขยะ";
+            } else {
+                badge.innerHTML = "ไม่ผ่านเกณฑ์ ❌";
+                badge.className = "status-badge status-fail";
+                msg.innerText = "ต้องได้ 80 คะแนนขึ้นไป ลองพยายามอีกครั้งนะครับ";
+            }
+        }
+    </script>
+</body>
+</html>
